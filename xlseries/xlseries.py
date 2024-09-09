@@ -69,7 +69,7 @@ class XlSeries(object):
 
     # PUBLIC
     def get_data_frames(self, params_path_or_obj, ws_name=None,
-                        safe_mode=False, preserve_wb_obj=True):
+                        safe_mode=False, preserve_wb_obj=True, dict_mode=False ):
         """Scrape time series from an excel file into a pandas.DataFrame.
 
         Args:
@@ -130,20 +130,29 @@ class XlSeries(object):
                 dfs, params = scraper_obj.get_data_frames(safe_mode)
                 self.params[ws_name] = params
 
-                if isinstance(dfs, list) and len(dfs) == 1:
-                    diccionario = {
-                        "df": dfs[0],
-                        "table_end": shared.table_end,
-                        "end": shared.end,
-                    }
-                    return diccionario
+                if dict_mode:
+                    if isinstance(dfs, list) and len(dfs) == 1:
+                        diccionario = {
+                            "df": dfs[0],
+                            "table_end": shared.table_end,
+                            "end": shared.end,
+                            }
+                        return diccionario
+                    else:
+                        diccionario = {
+                            "df": dfs,
+                            "table_end": shared.table_end,
+                            "end": shared.end,
+                            }
+                        return diccionario
+
                 else:
-                    diccionario = {
-                        "df": dfs,
-                        "table_end": shared.table_end,
-                        "end": shared.end,
-                    }
-                    return diccionario
+                    if isinstance(dfs, list) and len(dfs) == 1:
+                        df = dfs[0]
+                        return df
+                    else:
+                        df = dfs
+                        return df
 
 
     @staticmethod

@@ -124,7 +124,7 @@ class BaseCleanTiStrategy(object):
         # create iterator of time index values
         iter_time_index = self._time_index_iterator(
             ws, p["alignment"], p["time_header_coord"], p["data_starts"],
-            p["data_ends"])
+            p["data_ends"], p["time_alignment"])
 
         last_time = None
         no_time_value_count = 0
@@ -222,10 +222,10 @@ class BaseCleanTiStrategy(object):
     # PRIVATE time index iterator methods
     @classmethod
     def _time_index_iterator(cls, ws, alignment, time_header_coord, ini,
-                             end=None):
+                             end=None, time_alignment=None):
 
         if alignment == "vertical":
-            end = end or cls._get_row_boundary(ws, time_header_coord, ini)
+            end = end or cls._get_row_boundary(ws, time_header_coord, ini, time_alignment)
             shared.table_end = end - 1
             for row in range(ini, end + 1):
                 curr_time = cls._get_time_value(ws, time_header_coord,
@@ -254,7 +254,7 @@ class BaseCleanTiStrategy(object):
                             "'horizontal', not " + repr(alignment))
 
     @classmethod
-    def _get_row_boundary(cls, ws, time_header_coord, ini):
+    def _get_row_boundary(cls, ws, time_header_coord, ini,time_alignment):
         """Returns the pressumed last row of a column."""
         raise NotImplementedError("Getting the row boundary must be " +
                                   "implemented in a subclass.")
@@ -476,35 +476,50 @@ class BaseSingleTable():
         return True
 
     @classmethod
-    def _get_row_boundary(cls, ws, time_header_coord, ini):
-        """Returns the pressumed last row of a column."""
-        i = 1
-        while ws[time_header_coord].offset(row=i).value:
-            cell_value = ws[time_header_coord].offset(row=i).value
-            th_fragments=["IT","INDICE_TIEMPO", "ICE_TIEMPO"]
-            if any(fragment in str(cell_value) for fragment in th_fragments):
-                break
-            else:
-                i += 1
-        boundary_row = ws[time_header_coord].offset(row=i).row
-        #found_non_empty = False
-        th_cell = ws[time_header_coord]
-        th_column = column_index_from_string(th_cell.column)
+    def _fake_values(cls,cell_value,exclude_list):
+        return any(fragment in str(cell_value) for fragment in exclude_list)
 
-        for row in range(boundary_row - 1, ini - 1, -1):
-            if any(ws.cell(row=row, column=col).value for col in range(th_column + 1, ws.max_column + 1)):
-                break
-            else:
-                boundary_row = row
-            #for col in range(th_column + 1, ws.max_column + 1):
-                #if ws.cell(row=row, column=col).value:
-                   # found_non_empty = True
-                    #break
-            #if found_non_empty:
-                #break
-            #else:
-                #boundary_row = row
-        return boundary_row
+    @classmethod
+    def _get_row_boundary(cls, ws, time_header_coord, ini,time_alignment):
+        if time_alignment is 1 or -1:
+            return ws.max_row
+        else:
+
+            """Returns the pressumed last row of a column."""
+            exclude = ["IT", "INDICE_TIEMPO", "ICE_TIEMPO"]
+            th_row = int(''.join([char for char in time_header_coord if char.isdigit()]))
+            i = (ini-th_row)
+
+            while True:
+                cell_value = ws[time_header_coord].offset(row=i).value
+                next_cell_value = ws[time_header_coord].offset(row=i+1).value
+                if not cell_value and next_cell_value:
+                    if cls._fake_values(next_cell_value, exclude):
+                        break
+                    else:
+                        i += 1
+
+                elif cell_value:
+                    if cls._fake_values(cell_value, exclude):
+                        break
+                    else:
+                        i += 1
+                else:
+                    break
+
+            boundary_row = ws[time_header_coord].offset(row=i).row
+
+            th_cell = ws[time_header_coord]
+            th_column = column_index_from_string(th_cell.column)
+
+            for row in range(boundary_row - 1, ini - 1, -1):
+                if any(ws.cell(row=row, column=col).value for col in range(th_column + 1, ws.max_column + 1)):
+                    break
+                else:
+                    boundary_row = row
+            return boundary_row
+
+
 
     @classmethod
     def _get_column_boundary(cls, ws, time_header_coord, ini):
