@@ -87,14 +87,16 @@ class CleanSingleColumnTestCase(unittest.TestCase):
 
         ti_iter = CleanSingleColumn._time_index_iterator(ws, alignment,
                                                          time_header_coord,
-                                                         ini, end)
+                                                          ini, end)
         res = [i[0] for i in ti_iter]
+        print(res)
         self.assertEqual(res, ["a", "b", "c"])
 
         ti_iter = CleanSingleColumn._time_index_iterator(ws, alignment,
                                                          time_header_coord,
-                                                         ini)
+                                                        ini, test=True)
         res = [i[0] for i in ti_iter]
+        print(res)
         self.assertEqual(res, ["a", "b", "c", None])
 
         ws["F1"].value = "d"

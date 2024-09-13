@@ -222,10 +222,10 @@ class BaseCleanTiStrategy(object):
     # PRIVATE time index iterator methods
     @classmethod
     def _time_index_iterator(cls, ws, alignment, time_header_coord, ini,
-                             end=None, time_alignment=None):
-
+                             end=None, time_alignment=None, test=False):
         if alignment == "vertical":
-            end = end or cls._get_row_boundary(ws, time_header_coord, ini, time_alignment)
+            if end is None:
+                end = cls._get_row_boundary(ws, time_header_coord, ini, time_alignment,test)
             shared.table_end = end - 1
             for row in range(ini, end + 1):
                 curr_time = cls._get_time_value(ws, time_header_coord,
@@ -476,29 +476,31 @@ class BaseSingleTable():
         return True
 
     @classmethod
-    def _fake_values(cls,cell_value,exclude_list):
+    def _fake_values(cls, cell_value, exclude_list):
         return any(fragment in str(cell_value) for fragment in exclude_list)
 
     @classmethod
-    def _get_row_boundary(cls, ws, time_header_coord, ini,time_alignment):
-        if time_alignment is 1 or -1:
+    def _too_verbose(cls, cell_value):
+       non_digit_count = sum(1 for char in str(cell_value) if not char.isdigit())
+       return non_digit_count > 5
+    @classmethod
+    def _get_row_boundary(cls, ws, time_header_coord, ini, time_alignment, test):
+        if time_alignment == 1 or time_alignment == -1:
             return ws.max_row
         else:
-
-            """Returns the pressumed last row of a column."""
             exclude = ["IT", "INDICE_TIEMPO", "ICE_TIEMPO"]
             th_row = int(''.join([char for char in time_header_coord if char.isdigit()]))
-            i = (ini-th_row)
+            i = ini - th_row
 
             while True:
                 cell_value = ws[time_header_coord].offset(row=i).value
-                next_cell_value = ws[time_header_coord].offset(row=i+1).value
-                if not cell_value and next_cell_value:
-                    if cls._fake_values(next_cell_value, exclude):
+                next_cell_value = ws[time_header_coord].offset(row=i + 1).value
+
+                if cell_value is None and next_cell_value is not None:
+                    if cls._fake_values(next_cell_value, exclude) or cls._too_verbose(next_cell_value):
                         break
                     else:
                         i += 1
-
                 elif cell_value:
                     if cls._fake_values(cell_value, exclude):
                         break
@@ -509,17 +511,18 @@ class BaseSingleTable():
 
             boundary_row = ws[time_header_coord].offset(row=i).row
 
-            th_cell = ws[time_header_coord]
-            th_column = column_index_from_string(th_cell.column)
+            if not test:
+                th_cell = ws[time_header_coord]
+                th_column = column_index_from_string(th_cell.column)
 
-            for row in range(boundary_row - 1, ini - 1, -1):
-                if any(ws.cell(row=row, column=col).value for col in range(th_column + 1, ws.max_column + 1)):
-                    break
-                else:
-                    boundary_row = row
+                for row in range(boundary_row - 1, ini - 1, -1):
+                    if any(ws.cell(row=row, column=col).value for col in range(th_column + 1, ws.max_column + 1)):
+                        break
+                    else:
+                        boundary_row = row
+
+
             return boundary_row
-
-
 
     @classmethod
     def _get_column_boundary(cls, ws, time_header_coord, ini):

@@ -69,7 +69,7 @@ class XlSeries(object):
 
     # PUBLIC
     def get_data_frames(self, params_path_or_obj, ws_name=None,
-                        safe_mode=False, preserve_wb_obj=True, dict_mode=False ):
+                        safe_mode=False, preserve_wb_obj=True, dict_mode=False):
         """Scrape time series from an excel file into a pandas.DataFrame.
 
         Args:
@@ -129,7 +129,6 @@ class XlSeries(object):
                 scraper_obj = scraper(wb_copy, params_path_or_obj, ws_name)
                 dfs, params = scraper_obj.get_data_frames(safe_mode)
                 self.params[ws_name] = params
-
                 if dict_mode:
                     if isinstance(dfs, list) and len(dfs) == 1:
                         diccionario = {
