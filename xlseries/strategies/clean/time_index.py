@@ -234,7 +234,6 @@ class BaseCleanTiStrategy(object):
                                                 f_row=row + 1)
                 col = cls._time_header_cell(ws, time_header_coord).column
                 write_time_cell = ws[col + str(row)]
-
                 yield (curr_time, next_time, write_time_cell)
 
         elif alignment == "horizontal":
