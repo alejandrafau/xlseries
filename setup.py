@@ -28,7 +28,7 @@ setup(
     maintainer="Agustin Benassi",
     maintainer_email='agusbenassi@gmail.com',
     url='https://github.com/abenassi/xlseries',
-    download_url='https://github.com/abenassi/xlseries/archive/0.2.6.tar.gz',
+    download_url='https://github.com/datosgobar/xlseries/archive/0.2.7.tar.gz',
     packages=[
         'xlseries',
         'xlseries.strategies',
